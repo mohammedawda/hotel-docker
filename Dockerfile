@@ -2,7 +2,6 @@
 FROM php:8.2-fpm
 
 # Arguments for environment
-ARG user=www-data
 ARG uid=1000
 
 # Set working directory
@@ -13,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     curl \
+    sudo \
     libzip-dev \
     libonig-dev \
     libpng-dev \
@@ -27,12 +27,13 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Add user (optional, match your host UID)
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /var/www && chown -R $user:$user /var/www
+# Change existing www-data UID to match host UID
+RUN usermod -u $uid www-data
 
-# Switch to non-root user
-USER $user
+# Ensure correct permissions
+RUN chown -R www-data:www-data /var/www
+
+USER www-data
 
 # Copy existing Laravel code
 # (we mount the folder via docker-compose, so this is optional)
